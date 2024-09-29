@@ -46,9 +46,7 @@ class HandDetector:
                 h, w, c = img.shape
                 cx, cy = int(lm.x * w), int(lm.y * h)
                 lmList.append([id, cx, cy])
-                if draw and (
-                    id == 4 or id == 8
-                ):  # Thumb (id 4) and Index finger tip (id 8)
+                if draw and (id == 4 or id == 8):
                     cv2.circle(img, (cx, cy), 15, (255, 0, 255), cv2.FILLED)
 
         return lmList
@@ -56,17 +54,15 @@ class HandDetector:
 
 def set_volume(volume):
     """Set system volume to a specific percentage using pactl."""
-    volume = max(0, min(volume, 100))  # Clamp between 0 and 100
+    volume = max(0, min(volume, 100))
     subprocess.run(["pactl", "set-sink-volume", "@DEFAULT_SINK@", f"{volume}%"])
     print(f"Volume set to {volume}%")
 
 
 def map_distance_to_volume(dist, min_dist=50, max_dist=250, min_vol=0, max_vol=100):
     """Map the distance between thumb and index finger to a volume percentage."""
-    # Clamp the distance between the defined minimum and maximum distances
     dist = max(min_dist, min(dist, max_dist))
 
-    # Linearly map the distance to the volume range
     volume = ((dist - min_dist) / (max_dist - min_dist)) * (max_vol - min_vol) + min_vol
     return int(volume)
 
@@ -90,10 +86,9 @@ def main():
         lmList = detector.findPosition(img)
 
         if len(lmList) != 0:
-            x1, y1 = lmList[4][1], lmList[4][2]  # Thumb tip
-            x2, y2 = lmList[8][1], lmList[8][2]  # Index finger tip
+            x1, y1 = lmList[4][1], lmList[4][2]
+            x2, y2 = lmList[8][1], lmList[8][2]
 
-            # Draw a line between thumb and index finger
             cv2.line(img, (x1, y1), (x2, y2), (255, 0, 255), 3)
             length = math.hypot(x2 - x1, y2 - y1)
             if length < 100:
@@ -109,15 +104,10 @@ def main():
                     img, ((x1 + x2) // 2, (y1 + y2) // 2), 15, (255, 0, 255), cv2.FILLED
                 )
 
-            # Calculate the distance between the thumb and index finger
-
-            # Map the distance to a volume percentage (0-100)
             volume = map_distance_to_volume(length)
 
-            # Set the system volume based on the hand gesture distance
             set_volume(volume)
 
-            # Display the volume percentage on the screen
             cv2.putText(
                 img,
                 f"Volume: {volume}%",
